@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modo Conducción ✨ Agenda IA</title>
+    <title>Modo Conducción ✨ Agenda RV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -23,7 +23,6 @@
         }
     </style>
     <script>
-        // Funciones de carga global para las librerías de Google
         let gisReady = false;
         let gapiReady = false;
 
@@ -38,7 +37,7 @@
         }
     </script>
 </head>
-<body class="bg-slate-900 min-h-screen flex flex-col items-center p-4 font-sans text-slate-100">
+<body class="bg-slate-900 min-h-screen flex flex-col items-center p-4 font-sans text-slate-100 text-center">
 
     <div class="max-w-md w-full bg-slate-800 rounded-[3rem] shadow-2xl overflow-hidden mt-4 border border-slate-700 relative">
         
@@ -50,81 +49,81 @@
         <!-- Cabecera -->
         <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 text-white text-center">
             <h1 class="text-2xl font-black tracking-tight">AGENDA RV ✨</h1>
-            <p class="text-indigo-100 text-xs font-medium uppercase tracking-widest mt-1 italic">Business Intelligence x IA</p>
+            <p class="text-indigo-100 text-xs font-medium uppercase tracking-widest mt-1 italic text-center">IA Security Enhanced</p>
         </div>
 
         <!-- Pantalla de Autenticación / Ayuda OAuth -->
         <div id="auth-section" class="p-8 text-center">
-            <i class="fa-solid fa-microphone-lines text-6xl text-indigo-500 mb-6 opacity-80"></i>
+            <i class="fa-solid fa-shield-check text-6xl text-indigo-500 mb-6 opacity-80"></i>
             
+            <div id="setup-warning" class="hidden mb-6 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-2xl text-red-100 text-sm text-left">
+                <b class="uppercase block mb-1">Faltan Credenciales</b>
+                Pulsa el icono ⚙️ arriba a la derecha para introducir tu <b>Google API Key</b> y <b>Client ID</b>.
+            </div>
+
             <div id="oauth-helper" class="mb-6 p-5 bg-indigo-500/10 border-2 border-indigo-500/30 rounded-2xl text-slate-100 text-sm text-left">
                 <div class="flex items-center mb-2 text-indigo-400">
                     <i class="fa-solid fa-link text-lg mr-2"></i>
-                    <b class="text-xs uppercase">URL para la Consola Google:</b>
+                    <b class="text-xs uppercase">Origen para Google Cloud:</b>
                 </div>
                 
                 <div class="bg-black/60 p-3 rounded-xl mb-4 flex items-center justify-between border border-slate-600">
-                    <code id="current-url" class="text-indigo-300 break-all text-[11px] font-mono">Obteniendo origen...</code>
+                    <code id="current-url" class="text-indigo-300 break-all text-[11px] font-mono">Obteniendo...</code>
                     <button onclick="copyURL()" class="ml-2 p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                 </div>
-
-                <div class="space-y-3">
-                    <div class="flex gap-2">
-                        <div class="w-5 h-5 bg-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold">1</div>
-                        <p class="text-[11px]">En <b>ID de cliente OAuth</b> de tu consola, añade esta URL en "Orígenes de JavaScript".</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="w-5 h-5 bg-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold">2</div>
-                        <p class="text-[11px]">En <b>Pantalla de consentimiento</b>, marca tu app como <b>INTERNA</b> para tu dominio.</p>
-                    </div>
-                </div>
+                <p class="text-[10px] opacity-70 italic">Copia esto y ponlo en "Orígenes de JavaScript autorizados".</p>
             </div>
 
-            <button id="auth-button" class="w-full bg-white text-slate-900 font-bold py-5 px-6 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all">
+            <button id="auth-button" class="w-full bg-white text-slate-900 font-bold py-5 px-6 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all disabled:opacity-50">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3" alt="Google logo">
                 CONECTAR GOOGLE
             </button>
-            
-            <p class="mt-6 text-[10px] text-slate-500 leading-tight">
-                💡 <b>Consejo:</b> Descarga este archivo y ábrelo desde una URL fija (como un servidor local o hosting) para no tener que cambiar la consola nunca más.
-            </p>
         </div>
 
-        <!-- Panel de Ajustes de Documento -->
-        <div id="settings-panel" class="hidden p-8 space-y-6 bg-slate-900/95 absolute inset-0 z-30 flex flex-col pt-24">
-            <h2 class="text-xl font-bold border-b border-slate-700 pb-2 flex items-center">
-                <i class="fa-solid fa-file-pen mr-2 text-indigo-400"></i> Ajustes de Agenda
+        <!-- Panel de Ajustes (Aquí se meten las llaves ahora) -->
+        <div id="settings-panel" class="hidden p-8 space-y-4 bg-slate-900 absolute inset-0 z-30 flex flex-col pt-20 overflow-y-auto">
+            <h2 class="text-xl font-bold border-b border-slate-700 pb-2 flex items-center text-white">
+                <i class="fa-solid fa-key mr-2 text-indigo-400"></i> Configuración Segura
             </h2>
-            <div class="space-y-4">
+            
+            <div class="space-y-4 text-left">
                 <div>
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">Nombre para buscar archivo</label>
-                    <input type="text" id="config-doc-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 focus:border-indigo-500 outline-none">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Google API Key (AIza...)</label>
+                    <input type="password" id="config-api-key" placeholder="Pega tu API Key aquí" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white focus:border-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">ID Directo (Recomendado)</label>
-                    <input type="text" id="config-doc-id" placeholder="ID de la URL de Google Docs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 font-mono focus:border-indigo-500 outline-none">
-                    <p class="text-[9px] text-slate-500 mt-1 italic">Pega el ID que aparece en la URL del navegador al abrir tu Google Doc.</p>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Google Client ID</label>
+                    <input type="text" id="config-client-id" placeholder="...apps.googleusercontent.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white focus:border-indigo-500 outline-none">
+                </div>
+                <div class="border-t border-slate-700 pt-4">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Nombre del Doc en Drive</label>
+                    <input type="text" id="config-doc-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">ID Directo del Doc (Opcional)</label>
+                    <input type="text" id="config-doc-id" placeholder="ID de la URL de Docs" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white font-mono focus:border-indigo-500 outline-none">
                 </div>
             </div>
+
             <div class="pt-4 space-y-3">
-                <button id="save-settings" class="w-full py-4 bg-indigo-600 rounded-2xl font-bold shadow-lg">GUARDAR Y REINICIAR</button>
-                <button id="close-settings" class="w-full py-4 bg-slate-800 rounded-2xl font-bold text-slate-400">CANCELAR</button>
+                <button id="save-settings" class="w-full py-4 bg-indigo-600 rounded-2xl font-bold shadow-lg text-white uppercase text-xs tracking-widest">Guardar y Aplicar</button>
+                <button id="close-settings" class="w-full py-4 bg-slate-800 rounded-2xl font-bold text-slate-400 uppercase text-xs tracking-widest">Cerrar</button>
             </div>
         </div>
 
-        <!-- Sección Principal de Grabación -->
+        <!-- App Principal -->
         <div id="app-section" class="hidden p-8 space-y-6">
             <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 text-center">
-                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Documento Activo</span>
-                <div id="doc-name" class="text-indigo-400 font-bold truncate text-sm">Cargando...</div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Agenda Conectada</span>
+                <div id="doc-name" class="text-indigo-400 font-bold truncate text-sm italic">...</div>
             </div>
 
             <div class="text-center space-y-4 py-4">
                 <div id="status-indicator" class="text-sm font-black text-slate-500 uppercase tracking-widest">SISTEMA LISTO</div>
                 <div id="transcription-preview" class="min-h-[160px] p-6 bg-slate-900/80 border-2 border-slate-700 rounded-[2.5rem] text-slate-300 italic text-lg flex flex-col items-center justify-center text-center leading-relaxed">
-                    <span id="preview-text">"Pulsa el micrófono para dictar la interacción"</span>
+                    <span id="preview-text">"Pulsa el micro y habla"</span>
                     <div id="ai-loading" class="hidden mt-4 items-center text-indigo-400 font-bold text-xs uppercase tracking-widest">
                         <i class="fa-solid fa-wand-magic-sparkles animate-pulse mr-2"></i> Procesando con Gemini...
                     </div>
@@ -133,11 +132,11 @@
 
             <div class="flex flex-col items-center space-y-6">
                 <button id="record-btn" class="driving-btn w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all active:scale-90 border-[10px] border-slate-800 outline outline-4 outline-indigo-500/20">
-                    <i id="mic-icon" class="fa-solid fa-microphone text-5xl"></i>
+                    <i id="mic-icon" class="fa-solid fa-microphone text-5xl text-white"></i>
                 </button>
                 
                 <button id="ai-refine-btn" class="hidden w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center ai-glow uppercase text-xs tracking-widest">
-                    <i class="fa-solid fa-sparkles mr-3"></i> OPTIMIZAR NOTA CON IA
+                    <i class="fa-solid fa-sparkles mr-3"></i> OPTIMIZAR CON IA
                 </button>
             </div>
         </div>
@@ -147,18 +146,18 @@
         MENSAJE
     </div>
 
-    <!-- Librerías de Google -->
+    <!-- Librerías Google -->
     <script src="https://accounts.google.com/gsi/client" async defer onload="libLoaded('gis')"></script>
     <script src="https://apis.google.com/js/api.js" async defer onload="libLoaded('gapi')"></script>
 
     <script>
-        // --- CREDENCIALES ---
-        const CLIENT_ID = '1011569758504-5ln5ld1lascviri42uks2fh0i9jcheb7.apps.googleusercontent.com'; 
-        const API_KEY = 'AIzaSyAujHNlV3B2PhlMinGzA4cFJuKHnZVP848';
+        // CONFIGURACIÓN: Ahora el código está limpio de claves
         const SCOPES = 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file';
-        const apiKey = ""; // Gemini API Key (inyectada por el entorno)
+        const geminiApiKey = ""; // Inyectada por el entorno
 
-        // --- ESTADO ---
+        // Estado persistente (localStorage)
+        let savedApiKey = localStorage.getItem('cfg_api_key') || '';
+        let savedClientId = localStorage.getItem('cfg_client_id') || '';
         let configDocName = localStorage.getItem('cfg_doc_name') || 'Agenda de Interacciones Clientes';
         let configDocId = localStorage.getItem('cfg_doc_id') || '';
         let documentId = configDocId || localStorage.getItem('google_doc_id') || null;
@@ -167,6 +166,7 @@
         let accessToken = null;
         let lastTranscript = "";
 
+        // UI Selectors
         const authSection = document.getElementById('auth-section');
         const appSection = document.getElementById('app-section');
         const settingsPanel = document.getElementById('settings-panel');
@@ -176,11 +176,16 @@
         const previewText = document.getElementById('preview-text');
         const aiLoading = document.getElementById('ai-loading');
 
-        // Al cargar el DOM, mostramos la URL de origen
         window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-url').textContent = window.location.origin;
+            document.getElementById('config-api-key').value = savedApiKey;
+            document.getElementById('config-client-id').value = savedClientId;
             document.getElementById('config-doc-name').value = configDocName;
             document.getElementById('config-doc-id').value = configDocId;
+
+            if (!savedApiKey || !savedClientId) {
+                document.getElementById('setup-warning').classList.remove('hidden');
+            }
         });
 
         function copyURL() {
@@ -191,43 +196,54 @@
             temp.select();
             document.execCommand("copy");
             document.body.removeChild(temp);
-            showMsg("URL COPIADA");
+            showMsg("ORIGEN COPIADO");
         }
+
+        // --- MANEJO DE AJUSTES ---
+        document.getElementById('settings-btn').onclick = () => settingsPanel.classList.remove('hidden');
+        document.getElementById('close-settings').onclick = () => settingsPanel.classList.add('hidden');
+        document.getElementById('save-settings').onclick = () => {
+            localStorage.setItem('cfg_api_key', document.getElementById('config-api-key').value);
+            localStorage.setItem('cfg_client_id', document.getElementById('config-client-id').value);
+            localStorage.setItem('cfg_doc_name', document.getElementById('config-doc-name').value);
+            localStorage.setItem('cfg_doc_id', document.getElementById('config-doc-id').value);
+            showMsg("AJUSTES GUARDADOS");
+            setTimeout(() => location.reload(), 800);
+        };
 
         // --- INICIALIZACIÓN ---
         async function initServices() {
-            if (!CLIENT_ID || !API_KEY) return;
+            if (!savedApiKey || !savedClientId) {
+                console.warn("Faltan credenciales en ajustes.");
+                return;
+            }
             try {
                 await new Promise((resolve, reject) => gapi.load('client', { callback: resolve, onerror: reject }));
                 await gapi.client.init({
-                    apiKey: API_KEY,
+                    apiKey: savedApiKey,
                     discoveryDocs: ["https://docs.googleapis.com/$discovery/rest?version=v1", "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
                 });
                 tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
+                    client_id: savedClientId,
                     scope: SCOPES,
                     callback: (resp) => {
-                        if (resp.error) return showMsg("ERROR DE AUTORIZACIÓN");
+                        if (resp.error) return showMsg("ERROR AUTH");
                         accessToken = resp.access_token;
                         startApp();
                     },
                 });
                 initSpeech();
-            } catch (err) { console.error("Fallo inicialización Google:", err); }
+            } catch (err) { console.error("Fallo Init:", err); }
         }
 
-        // --- LÓGICA IA GEMINI ---
+        // --- IA GEMINI ---
         async function callGemini(prompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "Eres un asistente profesional de ventas para RV Neoresins. Tu misión es tomar transcripciones de voz desordenadas y convertirlas en notas profesionales estructuradas con: Resumen, Puntos clave y Próximas acciones." }] }
+                systemInstruction: { parts: [{ text: "Asistente experto para RV Neoresins. Convierte notas de voz en informes profesionales estructurados." }] }
             };
-            const response = await fetch(url, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(payload) 
-            });
+            const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
             const data = await response.json();
             return data.candidates?.[0]?.content?.parts?.[0]?.text;
         }
@@ -236,21 +252,20 @@
             if (!lastTranscript) return;
             aiLoading.classList.remove('hidden');
             aiBtn.disabled = true;
-            speak("Analizando con inteligencia artificial");
+            speak("Analizando");
             try {
-                const aiResult = await callGemini(`Nota de voz: "${lastTranscript}"`);
+                const aiResult = await callGemini(`Estructura nota: "${lastTranscript}"`);
                 lastTranscript = aiResult;
                 previewText.textContent = aiResult;
-                speak("Optimización completada");
                 await saveNote(aiResult, true);
                 aiBtn.classList.add('hidden');
-            } catch (err) { showMsg("ERROR EN IA"); } finally {
+            } catch (err) { showMsg("ERROR IA"); } finally {
                 aiLoading.classList.add('hidden');
                 aiBtn.disabled = false;
             }
         }
 
-        // --- MANEJO DE VOZ ---
+        // --- VOZ ---
         function speak(text) {
             if ('speechSynthesis' in window) {
                 const u = new SpeechSynthesisUtterance(text);
@@ -293,22 +308,17 @@
             }
         }
 
-        // --- GOOGLE DOCS API ---
         async function saveNote(text, isAI = false) {
             try {
                 const doc = await gapi.client.docs.documents.get({ documentId: documentId });
                 const endIdx = doc.result.body.content[doc.result.body.content.length - 1].endIndex - 1;
                 const now = new Date();
                 let timestamp = `\n\n--------------------------------------------\n`;
-                timestamp += isAI ? `✨ NOTA IA RV (${now.toLocaleString()})\n` : `📅 DICTADO ORIGINAL (${now.toLocaleString()})\n`;
+                timestamp += isAI ? `✨ NOTA IA RV (${now.toLocaleString()})\n` : `📅 ORIGINAL (${now.toLocaleString()})\n`;
                 timestamp += `${text}\n`;
-                
-                await gapi.client.docs.documents.batchUpdate({ 
-                    documentId: documentId, 
-                    resource: { requests: [{ insertText: { location: { index: endIdx }, text: timestamp } }] } 
-                });
-                showMsg(isAI ? "NOTA REFINADA GUARDADA" : "DICTADO GUARDADO");
-            } catch (err) { showMsg("ERROR AL GUARDAR"); }
+                await gapi.client.docs.documents.batchUpdate({ documentId: documentId, resource: { requests: [{ insertText: { location: { index: endIdx }, text: timestamp } }] } });
+                showMsg(isAI ? "IA GUARDADA" : "GUARDADO");
+            } catch (err) { showMsg("ERROR DRIVE"); }
         }
 
         async function startApp() {
@@ -330,28 +340,19 @@
                 }
                 localStorage.setItem('google_doc_id', documentId);
                 fetchDocInfo();
-            } catch (err) { console.error("Fallo findOrCreateDoc:", err); }
+            } catch (err) { console.error(err); }
         }
 
         async function fetchDocInfo() {
             try {
                 const doc = await gapi.client.docs.documents.get({ documentId: documentId });
                 document.getElementById('doc-name').textContent = doc.result.title;
-            } catch (e) { showMsg("DOC NO ENCONTRADO"); }
+            } catch (e) { showMsg("ID DOC INVÁLIDO"); }
         }
-
-        // --- LISTENERS ---
-        document.getElementById('settings-btn').onclick = () => settingsPanel.classList.remove('hidden');
-        document.getElementById('close-settings').onclick = () => settingsPanel.classList.add('hidden');
-        document.getElementById('save-settings').onclick = () => {
-            localStorage.setItem('cfg_doc_name', document.getElementById('config-doc-name').value);
-            localStorage.setItem('cfg_doc_id', document.getElementById('config-doc-id').value);
-            location.reload();
-        };
 
         document.getElementById('auth-button').onclick = () => {
             if (tokenClient) tokenClient.requestAccessToken();
-            else showMsg("SISTEMA NO INICIALIZADO");
+            else showMsg("CONFIGURA LAS LLAVES EN ⚙️");
         };
         recordBtn.onclick = () => isRecording ? recognition.stop() : recognition.start();
         aiBtn.onclick = () => processWithAI();
