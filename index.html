@@ -2,8 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Configuración para App Móvil (PWA) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
     <title>Agenda RV</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -19,118 +25,99 @@
             -webkit-tap-highlight-color: transparent; 
             overscroll-behavior: none;
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .ai-active {
+            border: 2px solid #818cf8;
+            background: rgba(129, 140, 248, 0.1);
+        }
+        /* Evitar selección de texto molesta en móviles */
+        * { -webkit-user-select: none; user-select: none; }
+        #transcript { user-select: text; -webkit-user-select: text; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-6 text-slate-200">
+<body class="p-6 text-slate-200">
 
-    <!-- Contenedor Principal Manos Libres -->
+    <!-- Contenedor Principal -->
     <div class="w-full max-w-md bg-slate-900 rounded-[3.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-10 border border-slate-800 text-center relative overflow-hidden">
         
-        <!-- Elementos decorativos suaves -->
+        <!-- Decoración suave -->
         <div class="absolute -top-24 -left-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl"></div>
 
         <!-- Cabecera -->
-        <div class="relative z-10 mb-10 text-center">
+        <div class="relative z-10 mb-8 text-center">
             <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-600 to-blue-500 rounded-3xl shadow-lg mb-4 mx-auto">
                 <i class="fa-solid fa-microphone-lines text-2xl text-white"></i>
             </div>
             <h1 class="text-3xl font-black text-white tracking-tighter uppercase text-center">Agenda RV</h1>
-            <p id="status-text" class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 text-center">Iniciando sistema...</p>
+            <p id="status-text" class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 text-center">Iniciando...</p>
         </div>
 
-        <!-- Pantalla de Inicio de Sesión -->
+        <!-- Pantalla de Login -->
         <div id="login-screen" class="relative z-10 space-y-6 text-center">
-            <p class="text-slate-400 text-sm leading-relaxed px-4 text-center">Conecta tu cuenta de empresa para guardar notas directamente en tu Google Docs.</p>
-            <button id="auth-btn" class="w-full py-5 bg-white text-black font-black rounded-[2rem] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl hover:bg-slate-100">
+            <p class="text-slate-400 text-sm leading-relaxed px-4 text-center">Toca abajo para conectar con tu cuenta de Neoresins.</p>
+            <button id="auth-btn" class="w-full py-5 bg-white text-black font-black rounded-[2rem] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6" alt="Google">
-                ENTRAR CON GOOGLE
+                INICIAR AGENDA
             </button>
-            
-            <!-- Aviso de Restricción de Dominio -->
-            <div id="domain-restriction-warning" class="hidden p-5 bg-amber-500/10 border border-amber-500/30 rounded-[2rem] mt-4 text-left">
-                <p class="text-[10px] text-amber-500 font-black uppercase mb-2 flex items-center">
-                    <i class="fa-solid fa-lock mr-2"></i> Seguridad Activa (403)
-                </p>
-                <p class="text-[10px] text-slate-300 leading-snug">
-                    Has restringido tu clave para que solo funcione en <b>GitHub Pages</b>.
-                </p>
-                <p class="text-[10px] text-slate-400 mt-2 leading-tight italic">
-                    La aplicación funcionará correctamente cuando la abras desde tu enlace: <br>
-                    <span class="text-indigo-400 break-all">dsepulcre-collab.github.io/agenda/</span>
-                </p>
-            </div>
         </div>
 
-        <!-- Pantalla de Grabación Activa -->
-        <div id="record-screen" class="hidden relative z-10 space-y-8 text-center">
+        <!-- Pantalla de Grabación -->
+        <div id="record-screen" class="hidden relative z-10 space-y-6 text-center">
             <div class="space-y-1 text-center">
                 <div class="flex flex-col items-center gap-1">
-                    <span id="doc-title" class="text-indigo-400 font-black text-sm uppercase tracking-widest block truncate text-center max-w-[200px]">...</span>
-                    <a id="open-doc-link" href="#" target="_blank" class="text-[9px] text-indigo-500 underline hover:text-indigo-300 transition-colors uppercase font-bold tracking-tighter">Abrir Agenda <i class="fa-solid fa-external-link text-[8px]"></i></a>
+                    <span id="doc-title" class="text-indigo-400 font-black text-xs uppercase tracking-widest block truncate text-center max-w-[200px]">...</span>
+                    <a id="open-doc-link" href="#" target="_blank" class="text-[9px] text-indigo-500 underline uppercase font-bold tracking-tighter">Ver Agenda Completa <i class="fa-solid fa-external-link text-[8px]"></i></a>
                 </div>
-                <span id="recording-label" class="text-[10px] font-medium text-slate-500 uppercase tracking-[0.2em] text-center block mt-2">Listo para dictar</span>
+                
+                <button id="ai-toggle" class="mt-4 px-5 py-2 rounded-full border border-slate-700 text-[9px] font-bold uppercase tracking-widest text-slate-400 transition-all flex items-center gap-2 mx-auto">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Limpieza IA: <span id="ai-status">OFF</span>
+                </button>
             </div>
 
-            <div class="bg-slate-950/60 rounded-[2.5rem] p-8 min-h-[220px] flex items-center justify-center border border-slate-800 shadow-inner">
-                <p id="transcript" class="text-xl font-medium italic text-slate-300 leading-snug text-center">"Pulsa el círculo y dicta tu interacción..."</p>
+            <div class="bg-slate-950/60 rounded-[2.5rem] p-8 min-h-[180px] flex items-center justify-center border border-slate-800 shadow-inner">
+                <p id="transcript" class="text-xl font-medium italic text-slate-300 leading-snug text-center">"Toca el micro y dicta..."</p>
             </div>
 
             <div class="pt-2 flex justify-center text-center">
-                <button id="mic-btn" class="w-28 h-28 bg-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all group mx-auto">
-                    <i id="mic-icon" class="fa-solid fa-microphone text-4xl text-white group-hover:scale-110 transition-transform"></i>
+                <button id="mic-btn" class="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all group mx-auto">
+                    <i id="mic-icon" class="fa-solid fa-microphone text-4xl text-white"></i>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Notificación Flotante -->
+    <!-- Feedback Visual -->
     <div id="toast" class="fixed bottom-12 px-8 py-4 bg-emerald-500 text-white rounded-full font-black shadow-2xl opacity-0 transition-all transform translate-y-4 pointer-events-none z-50 uppercase text-[10px] tracking-widest text-center">
-        Guardado con éxito
+        Nota Guardada
     </div>
 
-    <!-- Librerías oficiales de Google -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
 
     <script>
-        // CONFIGURACIÓN
         const CLIENT_ID = '1011569758504-5ln5ld1lascviri42uks2fh0i9jcheb7.apps.googleusercontent.com'; 
         const API_KEY = 'AIzaSyB3RGVs8JuETrkPKPljmqLpbPLNsGUsmys';
+        const GEMINI_API_KEY = ""; // Rellenar si se desea usar la IA
         const SCOPES = 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file';
         const DOC_NAME = 'Agenda de Interacciones Clientes';
 
-        let tokenClient;
-        let accessToken = null;
-        let documentId = localStorage.getItem('agenda_rv_doc_id');
+        let tokenClient, accessToken = null, documentId = localStorage.getItem('agenda_rv_doc_id'), useAI = false;
 
-        const loginScreen = document.getElementById('login-screen');
-        const recordScreen = document.getElementById('record-screen');
-        const statusText = document.getElementById('status-text');
-        const transcriptEl = document.getElementById('transcript');
-        const recordingLabel = document.getElementById('recording-label');
-        const micBtn = document.getElementById('mic-btn');
-        const docTitleEl = document.getElementById('doc-title');
-        const openDocLink = document.getElementById('open-doc-link');
-        const domainWarning = document.getElementById('domain-restriction-warning');
+        const loginScreen = document.getElementById('login-screen'), recordScreen = document.getElementById('record-screen');
+        const statusText = document.getElementById('status-text'), transcriptEl = document.getElementById('transcript');
+        const micBtn = document.getElementById('mic-btn'), docTitleEl = document.getElementById('doc-title');
+        const openDocLink = document.getElementById('open-doc-link'), aiToggle = document.getElementById('ai-toggle'), aiStatus = document.getElementById('ai-status');
 
-        window.onload = () => {
-            if (!CLIENT_ID || !API_KEY) {
-                statusText.textContent = "Error: Configuración incompleta";
-                return;
-            }
-            gapi.load('client', startGapi);
-        };
+        window.onload = () => gapi.load('client', startGapi);
 
         async function startGapi() {
             try {
-                // Inicializamos el cliente
-                await gapi.client.init({
-                    apiKey: API_KEY
-                });
-
-                // Cargamos APIs
+                await gapi.client.init({ apiKey: API_KEY });
                 await gapi.client.load('https://docs.googleapis.com/$discovery/rest?version=v1');
                 await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
 
@@ -138,85 +125,69 @@
                     client_id: CLIENT_ID,
                     scope: SCOPES,
                     callback: (resp) => {
-                        if (resp.error) {
-                            console.error("Error OAuth:", resp.error);
-                            showToast("Fallo en identificación");
-                            return;
-                        }
-                        accessToken = resp.access_token;
+                        if (resp.error) return;
                         gapi.client.setToken(resp);
                         onAuthSuccess();
                     }
                 });
-                
-                statusText.textContent = "Listo para conectar";
-                domainWarning.classList.add('hidden');
+                statusText.textContent = "Sistema Listo";
             } catch (err) {
-                console.error("Error inicializando GAPI:", err);
-                
-                // Si el error es 403, es por la restricción de dominio HTTP Referrer
-                const is403 = err?.status === 403 || (err?.result?.error?.code === 403) || (typeof err === 'string' && err.includes('403'));
-                
-                if (is403) {
-                    statusText.textContent = "Seguridad de Dominio (403)";
-                    domainWarning.classList.remove('hidden');
-                } else {
-                    statusText.textContent = "Error de Sistema";
-                }
+                statusText.textContent = "Error de Red";
             }
         }
 
         function onAuthSuccess() {
             loginScreen.classList.add('hidden');
             recordScreen.classList.remove('hidden');
-            statusText.textContent = "Sincronizado";
+            statusText.textContent = "Conectado";
             findOrCreateDoc();
         }
 
         async function findOrCreateDoc() {
-            docTitleEl.textContent = "Buscando documento...";
-            
             if (documentId) {
                 try {
                     const res = await gapi.client.docs.documents.get({ documentId: documentId });
                     updateDocUI(res.result.documentId, res.result.title);
                     return;
-                } catch (e) { 
-                    documentId = null; 
-                }
+                } catch (e) { documentId = null; }
             }
-
             try {
-                const res = await gapi.client.drive.files.list({ 
-                    q: `name = '${DOC_NAME}' and trashed = false and mimeType = 'application/vnd.google-apps.document'`,
-                    fields: 'files(id, name)'
-                });
+                const res = await gapi.client.drive.files.list({ q: `name = '${DOC_NAME}' and trashed = false` });
                 const files = res.result.files;
-                
-                if (files && files.length > 0) {
-                    documentId = files[0].id;
-                } else {
+                if (files && files.length > 0) documentId = files[0].id;
+                else {
                     const newDoc = await gapi.client.docs.documents.create({ title: DOC_NAME });
                     documentId = newDoc.result.documentId;
                 }
                 localStorage.setItem('agenda_rv_doc_id', documentId);
                 updateDocUI(documentId, DOC_NAME);
-            } catch (err) {
-                docTitleEl.textContent = "Error en Drive";
-            }
+            } catch (err) { docTitleEl.textContent = "Error Drive"; }
         }
 
         function updateDocUI(id, title) {
-            documentId = id;
             docTitleEl.textContent = title;
             openDocLink.href = `https://docs.google.com/document/d/${id}/edit`;
         }
 
+        // --- IA GEMINI ---
+        async function refineTextWithAI(text) {
+            if (!GEMINI_API_KEY) return text;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Corrige ortografía y gramática de esta nota comercial. No cambies datos ni el sentido. Devuelve solo el texto limpio: "${text}"` }] }]
+                    })
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text || text;
+            } catch (err) { return text; }
+        }
+
         // --- VOZ ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            transcriptEl.textContent = "Voz no compatible.";
-        } else {
+        if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
             recognition.lang = 'es-ES';
             recognition.interimResults = true;
@@ -225,28 +196,24 @@
             recognition.onstart = () => {
                 isRecording = true;
                 micBtn.classList.add('pulse-red', 'bg-red-500');
-                micBtn.classList.remove('bg-indigo-600');
-                recordingLabel.textContent = "Escuchando...";
                 transcriptEl.textContent = "...";
-                speakFeedback("Dime");
             };
 
             recognition.onresult = (e) => {
-                const text = Array.from(e.results).map(r => r[0].transcript).join('');
-                transcriptEl.textContent = text;
+                transcriptEl.textContent = Array.from(e.results).map(r => r[0].transcript).join('');
             };
 
-            recognition.onend = () => {
+            recognition.onend = async () => {
                 isRecording = false;
                 micBtn.classList.remove('pulse-red', 'bg-red-500');
-                micBtn.classList.add('bg-indigo-600');
-                recordingLabel.textContent = "Guardando...";
-                const text = transcriptEl.textContent.trim();
-                if (text && text.length > 2 && text !== "...") {
-                    saveToGoogleDocs(text);
+                const rawText = transcriptEl.textContent.trim();
+                if (rawText && rawText.length > 2 && rawText !== "...") {
+                    transcriptEl.textContent = useAI ? "IA Revisando..." : "Guardando...";
+                    let finalContent = rawText;
+                    if (useAI) finalContent = await refineTextWithAI(rawText);
+                    saveToGoogleDocs(finalContent);
                 } else {
-                    recordingLabel.textContent = "Listo";
-                    transcriptEl.textContent = "Pulsa el micro...";
+                    transcriptEl.textContent = "Toca el micro para dictar...";
                 }
             };
 
@@ -256,48 +223,30 @@
         async function saveToGoogleDocs(text) {
             try {
                 const doc = await gapi.client.docs.documents.get({ documentId: documentId });
-                const contentBlocks = doc.result.body.content;
-                const endIdx = contentBlocks[contentBlocks.length - 1].endIndex - 1;
-
+                const endIdx = doc.result.body.content[doc.result.body.content.length - 1].endIndex - 1;
                 const now = new Date();
                 const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
-                const formattedContent = `\n\n--------------------------------------------\n📅 [${timestamp}]\n💬 ${text}`;
+                const formattedContent = `\n\n--------------------------------------------\n[${timestamp}]\n${text}`;
 
                 await gapi.client.docs.documents.batchUpdate({
                     documentId: documentId,
-                    resource: { 
-                        requests: [{ 
-                            insertText: { 
-                                location: { index: endIdx }, 
-                                text: formattedContent 
-                            } 
-                        }] 
-                    }
+                    resource: { requests: [{ insertText: { location: { index: endIdx }, text: formattedContent } }] }
                 });
                 
-                showToast("Guardado con éxito");
-                speakFeedback("Anotado");
-                recordingLabel.textContent = "Listo";
+                showToast("Anotado");
+                speakFeedback("Guardado");
                 
-                if (openDocLink.href && openDocLink.href !== "#") {
-                    window.open(openDocLink.href, '_blank');
-                }
-
-                setTimeout(() => { 
-                    if (!isRecording) transcriptEl.textContent = "Pulsa el micro y habla..."; 
-                }, 2500);
-            } catch (err) {
-                showToast("Error al guardar");
-                recordingLabel.textContent = "Fallo";
-                speakFeedback("Error al guardar");
-            }
+                // Abrir al final: Google Docs suele recordar la posición. 
+                if (openDocLink.href) window.open(openDocLink.href, '_blank');
+                setTimeout(() => { transcriptEl.textContent = "Toca el círculo para dictar..."; }, 2500);
+            } catch (err) { showToast("Error al guardar"); }
         }
 
         function speakFeedback(text) {
             if ('speechSynthesis' in window) {
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'es-ES';
-                u.rate = 1.1;
+                u.rate = 1.2;
                 window.speechSynthesis.speak(u);
             }
         }
@@ -307,14 +256,17 @@
             t.textContent = msg;
             t.style.opacity = "1";
             t.style.transform = "translateY(0)";
-            setTimeout(() => {
-                t.style.opacity = "0";
-                t.style.transform = "translateY(4px)";
-            }, 3000);
+            setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateY(4px)"; }, 3000);
         }
 
-        document.getElementById('auth-btn').onclick = () => tokenClient.requestAccessToken();
+        aiToggle.onclick = () => {
+            useAI = !useAI;
+            aiStatus.textContent = useAI ? "ON" : "OFF";
+            aiToggle.classList.toggle('ai-active', useAI);
+            aiToggle.classList.toggle('text-indigo-400', useAI);
+        };
 
+        document.getElementById('auth-btn').onclick = () => tokenClient.requestAccessToken();
     </script>
 </body>
 </html>
