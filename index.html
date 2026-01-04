@@ -100,9 +100,10 @@
     <script src="https://apis.google.com/js/api.js" async defer></script>
 
     <script>
+        // CONFIGURACIÓN
         const CLIENT_ID = '1011569758504-5ln5ld1lascviri42uks2fh0i9jcheb7.apps.googleusercontent.com'; 
         const API_KEY = 'AIzaSyB3RGVs8JuETrkPKPljmqLpbPLNsGUsmys';
-        const GEMINI_API_KEY = ""; // Rellenar si se desea usar la IA
+        const GEMINI_API_KEY = ""; // Rellenar para usar la IA
         const SCOPES = 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file';
         const DOC_NAME = 'Agenda de Interacciones Clientes';
 
@@ -177,7 +178,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Corrige ortografía y gramática de esta nota comercial. No cambies datos ni el sentido. Devuelve solo el texto limpio: "${text}"` }] }]
+                        contents: [{ parts: [{ text: `Revisa este texto de una interacción comercial para corregir faltas de ortografía, puntuación y coherencia gramatical. NO cambies la información, los datos ni el sentido del texto original. Devuelve SOLO el texto corregido sin introducciones ni comentarios: "${text}"` }] }]
                     })
                 });
                 const data = await response.json();
@@ -222,22 +223,28 @@
 
         async function saveToGoogleDocs(text) {
             try {
-                const doc = await gapi.client.docs.documents.get({ documentId: documentId });
-                const endIdx = doc.result.body.content[doc.result.body.content.length - 1].endIndex - 1;
                 const now = new Date();
                 const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
-                const formattedContent = `\n\n--------------------------------------------\n[${timestamp}]\n${text}`;
+                
+                // Formato para añadir AL PRINCIPIO:
+                // El separador va DEBAJO del nuevo texto para separarlo del anterior
+                const formattedContent = `[${timestamp}]\n${text}\n--------------------------------------------\n\n`;
 
                 await gapi.client.docs.documents.batchUpdate({
                     documentId: documentId,
-                    resource: { requests: [{ insertText: { location: { index: endIdx }, text: formattedContent } }] }
+                    resource: { 
+                        requests: [{ 
+                            insertText: { 
+                                location: { index: 1 }, // ÍNDICE 1 = PRINCIPIO DEL DOCUMENTO
+                                text: formattedContent 
+                            } 
+                        }] 
+                    }
                 });
                 
                 showToast("Anotado");
                 speakFeedback("Guardado");
                 
-                // Abrir al final: Google Docs suele recordar la posición. 
-                if (openDocLink.href) window.open(openDocLink.href, '_blank');
                 setTimeout(() => { transcriptEl.textContent = "Toca el círculo para dictar..."; }, 2500);
             } catch (err) { showToast("Error al guardar"); }
         }
