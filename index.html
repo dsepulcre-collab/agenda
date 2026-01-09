@@ -74,7 +74,10 @@
             
             <div id="setup-warning" class="hidden mb-6 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-2xl text-red-100 text-sm text-left">
                 <b id="warning-title" class="uppercase block mb-1 text-xs text-center">Configuración Requerida</b>
-                <p id="warning-text" class="text-[10px] text-center">Pulsa el icono ⚙️ para configurar tus llaves de acceso de Google Cloud o edita el archivo index.html.</p>
+                <p id="warning-text" class="text-[10px] text-center mb-2">Pulsa el icono ⚙️ para configurar tus llaves de acceso o verifica las restricciones de dominio en Google Cloud.</p>
+                <div id="copy-referer-container" class="hidden">
+                   <button id="copy-referer-btn" class="w-full py-2 bg-red-500/40 rounded-lg text-[9px] uppercase font-bold hover:bg-red-500/60 transition-all">Copiar URL para autorizar</button>
+                </div>
             </div>
 
             <button id="auth-button" class="w-full bg-white text-slate-900 font-bold py-5 px-6 rounded-3xl flex items-center justify-center shadow-lg active:scale-95 transition-all">
@@ -166,7 +169,6 @@
             document.getElementById('config-client-id').value = savedClientId;
             document.getElementById('config-doc-id').value = configDocId;
             
-            // Inicializar micrófono independientemente de Google
             initSpeech();
 
             if (!savedApiKey || !savedClientId) {
@@ -177,7 +179,13 @@
         async function initServices() {
             if (!savedApiKey || !savedClientId) return;
             try {
-                await new Promise((resolve) => gapi.load('client', resolve));
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {
+                        callback: resolve,
+                        onerror: reject
+                    });
+                });
+
                 await gapi.client.init({ apiKey: savedApiKey });
                 
                 await gapi.client.load('https://docs.googleapis.com/$discovery/rest?version=v1');
@@ -197,12 +205,28 @@
             } catch (err) { 
                 console.error("Error GAPI:", err);
                 const errorMsg = err?.result?.error?.message || "";
+                const reason = err?.result?.error?.details?.[0]?.reason || "";
                 
-                if (errorMsg.includes("referer") || err?.status === 403) {
-                    statusInd.textContent = "BLOQUEO DE SEGURIDAD (403)";
+                // Manejo de error de Referer bloqueado
+                if (reason === "API_KEY_HTTP_REFERRER_BLOCKED" || err?.status === 403) {
+                    statusInd.textContent = "API KEY BLOQUEADA (403)";
                     warningBox.classList.remove('hidden');
-                    document.getElementById('warning-title').textContent = "Acceso Denegado (403)";
-                    document.getElementById('warning-text').innerHTML = "La API Key está bloqueada en este entorno por restricciones de dominio. <br><b>Prueba la app en tu dominio autorizado (GitHub)</b>.";
+                    document.getElementById('warning-title').textContent = "Referer Bloqueado (Error 403)";
+                    
+                    const currentOrigin = window.location.origin;
+                    document.getElementById('warning-text').innerHTML = `Tu API Key tiene restricciones de dominio. Debes autorizar esta URL en Google Cloud Console:<br><code class="bg-black/40 p-1 rounded text-indigo-300 block my-2 break-all">${currentOrigin}/*</code>`;
+                    
+                    const copyBtnContainer = document.getElementById('copy-referer-container');
+                    copyBtnContainer.classList.remove('hidden');
+                    document.getElementById('copy-referer-btn').onclick = () => {
+                        const temp = document.createElement("input");
+                        document.body.appendChild(temp);
+                        temp.value = currentOrigin + "/*";
+                        temp.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(temp);
+                        showMsg("URL COPIADA");
+                    };
                 } else {
                     statusInd.textContent = "ERROR DE CONEXIÓN";
                 }
@@ -211,7 +235,6 @@
 
         function speak(text, callback) {
             if ('speechSynthesis' in window) {
-                // Cancelar cualquier audio previo para evitar colas
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'es-ES';
@@ -236,10 +259,11 @@
                 recognition.continuous = true; 
 
                 recognition.onstart = () => {
-                    isRecording = true;
+                    statusInd.textContent = "MICRÓFONO ACTIVO";
                     recordBtn.classList.add('pulse-animation', 'bg-red-500');
-                    statusInd.textContent = "ESCUCHANDO...";
-                    previewText.textContent = "...";
+                    if (previewText.textContent === "Pulsa el micro y habla") {
+                        previewText.textContent = "...";
+                    }
                 };
 
                 recognition.onresult = (e) => {
@@ -247,11 +271,14 @@
                     for (let i = 0; i < e.results.length; ++i) {
                         finalStr += e.results[i][0].transcript;
                     }
-                    previewText.textContent = finalStr;
+                    if (finalStr.trim().toLowerCase() === "dime") {
+                        previewText.textContent = "...";
+                    } else {
+                        previewText.textContent = finalStr;
+                    }
                 };
 
                 recognition.onend = () => {
-                    // Si el estado sigue siendo grabando pero el navegador paró, reiniciamos
                     if (isRecording) {
                         try {
                             recognition.start();
@@ -262,7 +289,7 @@
                     recordBtn.classList.remove('pulse-animation', 'bg-red-500');
                     statusInd.textContent = "SISTEMA LISTO";
                     const text = previewText.textContent.trim();
-                    if (text && text.length > 2 && text !== "...") {
+                    if (text && text.length > 2 && text !== "..." && text !== "dime") {
                         saveNote(text);
                     } else {
                         previewText.textContent = "Pulsa el micro y habla";
@@ -270,8 +297,8 @@
                 };
 
                 recognition.onerror = (e) => {
-                    if (e.error === 'no-speech') return;
                     console.error("Error Speech:", e.error);
+                    if (e.error === 'not-allowed') showMsg("PERMISO DENEGADO");
                 };
             }
         }
@@ -302,7 +329,10 @@
                 setTimeout(() => { 
                     if (!isRecording) previewText.textContent = "Pulsa el micro y habla"; 
                 }, 3000);
-            } catch (err) { showMsg("ERROR AL GUARDAR"); }
+            } catch (err) { 
+                console.error("Error al guardar:", err);
+                showMsg("ERROR AL GUARDAR"); 
+            }
         }
 
         async function startApp() {
@@ -345,15 +375,14 @@
                 isRecording = false;
                 recognition.stop();
             } else {
-                // Decir "Dime" y esperar a que termine para activar el micro
-                speak("Dime", () => {
-                    try {
-                        recognition.start();
-                    } catch(e) {
-                        console.error("Error al iniciar grabación:", e);
-                        showMsg("ERROR AL INICIAR");
-                    }
-                });
+                isRecording = true;
+                try {
+                    recognition.start();
+                    speak("Dime");
+                } catch(e) {
+                    console.error("Error al iniciar grabación:", e);
+                    showMsg("ERROR AL INICIAR");
+                }
             }
         };
 
