@@ -166,6 +166,9 @@
             document.getElementById('config-client-id').value = savedClientId;
             document.getElementById('config-doc-id').value = configDocId;
             
+            // Inicializar micrófono independientemente de Google
+            initSpeech();
+
             if (!savedApiKey || !savedClientId) {
                 warningBox.classList.remove('hidden');
             }
@@ -177,7 +180,6 @@
                 await new Promise((resolve) => gapi.load('client', resolve));
                 await gapi.client.init({ apiKey: savedApiKey });
                 
-                // Carga explícita de APIs para evitar errores de descubrimiento
                 await gapi.client.load('https://docs.googleapis.com/$discovery/rest?version=v1');
                 await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
 
@@ -191,13 +193,11 @@
                         startApp();
                     },
                 });
-                initSpeech();
                 warningBox.classList.add('hidden');
             } catch (err) { 
                 console.error("Error GAPI:", err);
                 const errorMsg = err?.result?.error?.message || "";
                 
-                // Detección específica de error de restricción por Referer
                 if (errorMsg.includes("referer") || err?.status === 403) {
                     statusInd.textContent = "BLOQUEO DE SEGURIDAD (403)";
                     warningBox.classList.remove('hidden');
@@ -222,7 +222,7 @@
         let recognition = null;
 
         function initSpeech() {
-            if (SpeechRecognition) {
+            if (SpeechRecognition && !recognition) {
                 recognition = new SpeechRecognition();
                 recognition.lang = 'es-ES';
                 recognition.interimResults = true;
@@ -245,8 +245,11 @@
                 };
 
                 recognition.onend = () => {
+                    // Si el estado sigue siendo grabando pero el navegador paró, reiniciamos
                     if (isRecording) {
-                        recognition.start();
+                        try {
+                            recognition.start();
+                        } catch(e) { console.warn("Re-inicio fallido"); }
                         return;
                     }
                     
@@ -259,10 +262,19 @@
                         previewText.textContent = "Pulsa el micro y habla";
                     }
                 };
+
+                recognition.onerror = (e) => {
+                    if (e.error === 'no-speech') return;
+                    console.error("Error Speech:", e.error);
+                };
             }
         }
 
         async function saveNote(text) {
+            if (!accessToken) {
+                showMsg("SIN CONEXIÓN GOOGLE");
+                return;
+            }
             try {
                 const now = new Date();
                 const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
@@ -319,12 +331,20 @@
         };
         
         recordBtn.onclick = () => {
+            if (!recognition) {
+                showMsg("VOZ NO SOPORTADA");
+                return;
+            }
             if (isRecording) {
                 isRecording = false;
                 recognition.stop();
             } else {
-                if (recognition) recognition.start();
-                else showMsg("VOZ NO LISTA");
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error("Error al iniciar grabación:", e);
+                    showMsg("ERROR AL INICIAR");
+                }
             }
         };
 
