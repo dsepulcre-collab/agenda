@@ -55,7 +55,7 @@
 </head>
 <body class="p-4 text-slate-100 text-center">
 
-    <div class="max-w-md w-full bg-slate-800 rounded-[3.5rem] shadow-2xl overflow-hidden border border-slate-700 relative">
+    <div class="max-w-md w-full bg-slate-900 rounded-[3.5rem] shadow-2xl overflow-hidden border border-slate-800 relative">
         
         <!-- Botón de Ajustes -->
         <button id="settings-btn" class="absolute top-8 right-8 text-slate-400 hover:text-white z-20 p-2">
@@ -73,8 +73,8 @@
             <i class="fa-solid fa-shield-check text-6xl text-indigo-500 mb-6 opacity-80"></i>
             
             <div id="setup-warning" class="hidden mb-6 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-2xl text-red-100 text-sm text-left">
-                <b class="uppercase block mb-1 text-xs text-center">Configuración Requerida</b>
-                <p class="text-[10px] text-center">Pulsa el icono ⚙️ para configurar tus llaves de acceso de Google Cloud.</p>
+                <b id="warning-title" class="uppercase block mb-1 text-xs text-center">Configuración Requerida</b>
+                <p id="warning-text" class="text-[10px] text-center">Pulsa el icono ⚙️ para configurar tus llaves de acceso de Google Cloud o edita el archivo index.html.</p>
             </div>
 
             <button id="auth-button" class="w-full bg-white text-slate-900 font-bold py-5 px-6 rounded-3xl flex items-center justify-center shadow-lg active:scale-95 transition-all">
@@ -112,19 +112,19 @@
 
         <!-- App Principal -->
         <div id="app-section" class="hidden p-8 space-y-6">
-            <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 text-center">
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center">
                 <div id="doc-name" class="text-indigo-400 font-bold truncate text-xs italic tracking-tight">Cargando Agenda...</div>
             </div>
 
             <div class="text-center space-y-4 py-2">
                 <div id="status-indicator" class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">SISTEMA LISTO</div>
-                <div id="transcription-preview" class="min-h-[160px] p-6 bg-slate-900/80 border border-slate-700 rounded-[2.5rem] text-slate-300 italic text-xl flex flex-col items-center justify-center text-center leading-relaxed">
+                <div id="transcription-preview" class="min-h-[160px] p-6 bg-slate-950 border border-slate-800 rounded-[2.5rem] text-slate-300 italic text-xl flex flex-col items-center justify-center text-center leading-relaxed">
                     <span id="preview-text">"Pulsa el micro y habla"</span>
                 </div>
             </div>
 
             <div class="flex flex-col items-center space-y-6">
-                <button id="record-btn" class="driving-btn w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all border-[8px] border-slate-800 outline outline-4 outline-indigo-500/10">
+                <button id="record-btn" class="driving-btn w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all border-[8px] border-slate-900 outline outline-4 outline-indigo-500/10">
                     <i id="mic-icon" class="fa-solid fa-microphone text-5xl"></i>
                 </button>
             </div>
@@ -141,12 +141,16 @@
     <script src="https://apis.google.com/js/api.js" async defer onload="libLoaded('gapi')"></script>
 
     <script>
-        // CONFIGURACIÓN INICIAL
+        // --- CONFIGURACIÓN PERMANENTE ---
+        const HARDCODED_API_KEY = "AIzaSyB3RGVs8JuETrkPKPljmqLpbPLNsGUsmys"; 
+        const HARDCODED_CLIENT_ID = "1011569758504-5ln5ld1lascviri42uks2fh0i9jcheb7.apps.googleusercontent.com";
+        const HARDCODED_DOC_ID = "1dkKdGLSYj2fJHaNQ1D5y-AFW_EAdQNJHelD1wAR7lJU";
+
         const SCOPES = 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file';
 
-        let savedApiKey = localStorage.getItem('cfg_api_key') || '';
-        let savedClientId = localStorage.getItem('cfg_client_id') || '';
-        let configDocId = localStorage.getItem('cfg_doc_id') || '1dkKdGLSYj2fJHaNQ1D5y-AFW_EAdQNJHelD1wAR7lJU';
+        let savedApiKey = HARDCODED_API_KEY || localStorage.getItem('cfg_api_key') || '';
+        let savedClientId = HARDCODED_CLIENT_ID || localStorage.getItem('cfg_client_id') || '';
+        let configDocId = HARDCODED_DOC_ID || localStorage.getItem('cfg_doc_id') || '';
         let documentId = configDocId;
 
         let tokenClient, accessToken = null;
@@ -155,12 +159,16 @@
         const authSection = document.getElementById('auth-section'), appSection = document.getElementById('app-section');
         const settingsPanel = document.getElementById('settings-panel'), recordBtn = document.getElementById('record-btn');
         const statusInd = document.getElementById('status-indicator'), previewText = document.getElementById('preview-text');
+        const warningBox = document.getElementById('setup-warning');
 
         window.onload = () => {
             document.getElementById('config-api-key').value = savedApiKey;
             document.getElementById('config-client-id').value = savedClientId;
             document.getElementById('config-doc-id').value = configDocId;
-            if (!savedApiKey || !savedClientId) document.getElementById('setup-warning').classList.remove('hidden');
+            
+            if (!savedApiKey || !savedClientId) {
+                warningBox.classList.remove('hidden');
+            }
         };
 
         async function initServices() {
@@ -168,6 +176,8 @@
             try {
                 await new Promise((resolve) => gapi.load('client', resolve));
                 await gapi.client.init({ apiKey: savedApiKey });
+                
+                // Carga explícita de APIs para evitar errores de descubrimiento
                 await gapi.client.load('https://docs.googleapis.com/$discovery/rest?version=v1');
                 await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
 
@@ -182,7 +192,21 @@
                     },
                 });
                 initSpeech();
-            } catch (err) { console.error("Error GAPI:", err); }
+                warningBox.classList.add('hidden');
+            } catch (err) { 
+                console.error("Error GAPI:", err);
+                const errorMsg = err?.result?.error?.message || "";
+                
+                // Detección específica de error de restricción por Referer
+                if (errorMsg.includes("referer") || err?.status === 403) {
+                    statusInd.textContent = "BLOQUEO DE SEGURIDAD (403)";
+                    warningBox.classList.remove('hidden');
+                    document.getElementById('warning-title').textContent = "Acceso Denegado (403)";
+                    document.getElementById('warning-text').innerHTML = "La API Key está bloqueada en este entorno por restricciones de dominio. <br><b>Prueba la app en tu dominio autorizado (GitHub)</b>.";
+                } else {
+                    statusInd.textContent = "ERROR DE CONEXIÓN";
+                }
+            }
         }
 
         function speak(text) {
@@ -194,7 +218,6 @@
             }
         }
 
-        // --- SISTEMA DE VOZ ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
 
@@ -203,8 +226,6 @@
                 recognition = new SpeechRecognition();
                 recognition.lang = 'es-ES';
                 recognition.interimResults = true;
-                
-                // MODO CONTINUO ACTIVADO: No se corta al haber pausas de silencio
                 recognition.continuous = true; 
 
                 recognition.onstart = () => {
@@ -224,7 +245,6 @@
                 };
 
                 recognition.onend = () => {
-                    // Si el móvil intenta cerrarlo pero seguimos queriendo grabar, reiniciamos
                     if (isRecording) {
                         recognition.start();
                         return;
@@ -246,8 +266,6 @@
             try {
                 const now = new Date();
                 const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
-                
-                // Formato: Lo nuevo ARRIBA
                 const entry = `[${timestamp}]\n${text}\n--------------------------------------------\n\n`;
 
                 await gapi.client.docs.documents.batchUpdate({ 
@@ -255,7 +273,7 @@
                     resource: { 
                         requests: [{ 
                             insertText: { 
-                                location: { index: 1 }, // Insertar al principio (debajo del título)
+                                location: { index: 1 }, 
                                 text: entry 
                             } 
                         }] 
@@ -282,7 +300,6 @@
             } catch (e) { showMsg("ERROR DE ACCESO AL DOC"); }
         }
 
-        // EVENTOS DE BOTONES
         document.getElementById('save-settings').onclick = () => {
             localStorage.setItem('cfg_api_key', document.getElementById('config-api-key').value);
             localStorage.setItem('cfg_client_id', document.getElementById('config-client-id').value);
@@ -292,14 +309,22 @@
 
         document.getElementById('settings-btn').onclick = () => settingsPanel.classList.remove('hidden');
         document.getElementById('close-settings').onclick = () => settingsPanel.classList.add('hidden');
-        document.getElementById('auth-button').onclick = () => tokenClient.requestAccessToken();
+        document.getElementById('auth-button').onclick = () => {
+            if (tokenClient) {
+                tokenClient.requestAccessToken();
+            } else {
+                showMsg("INICIALIZANDO...");
+                initServices();
+            }
+        };
         
         recordBtn.onclick = () => {
             if (isRecording) {
                 isRecording = false;
                 recognition.stop();
             } else {
-                recognition.start();
+                if (recognition) recognition.start();
+                else showMsg("VOZ NO LISTA");
             }
         };
 
