@@ -8,16 +8,17 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
-    <title>Agenda RV</title>
+    <title>Modo Conducción ✨ Agenda RV</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Animación para el botón de grabación activa */
-        .pulse-red { animation: pulse-red 2s infinite; }
-        @keyframes pulse-red {
+        .pulse-animation {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.15); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         body { 
@@ -30,250 +31,284 @@
             align-items: center;
             justify-content: center;
         }
-        .ai-active {
-            border: 2px solid #818cf8;
-            background: rgba(129, 140, 248, 0.1);
+        .driving-btn {
+            touch-action: manipulation;
         }
-        /* Evitar selección de texto molesta en móviles */
+        /* Evitar selección de texto molesta en conducción */
         * { -webkit-user-select: none; user-select: none; }
-        #transcript { user-select: text; -webkit-user-select: text; }
+        #transcription-preview { user-select: text; -webkit-user-select: text; }
     </style>
-</head>
-<body class="p-6 text-slate-200">
+    <script>
+        let gisReady = false;
+        let gapiReady = false;
 
-    <!-- Contenedor Principal -->
-    <div class="w-full max-w-md bg-slate-900 rounded-[3.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-10 border border-slate-800 text-center relative overflow-hidden">
+        function libLoaded(lib) {
+            if (lib === 'gis') gisReady = true;
+            if (lib === 'gapi') gapiReady = true;
+            if (gisReady && gapiReady) {
+                setTimeout(() => {
+                    if (typeof initServices === 'function') initServices();
+                }, 200);
+            }
+        }
+    </script>
+</head>
+<body class="p-4 text-slate-100 text-center">
+
+    <div class="max-w-md w-full bg-slate-800 rounded-[3.5rem] shadow-2xl overflow-hidden border border-slate-700 relative">
         
-        <!-- Decoración suave -->
-        <div class="absolute -top-24 -left-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <!-- Botón de Ajustes -->
+        <button id="settings-btn" class="absolute top-8 right-8 text-slate-400 hover:text-white z-20 p-2">
+            <i class="fa-solid fa-gear text-xl"></i>
+        </button>
 
         <!-- Cabecera -->
-        <div class="relative z-10 mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-600 to-blue-500 rounded-3xl shadow-lg mb-4 mx-auto">
-                <i class="fa-solid fa-microphone-lines text-2xl text-white"></i>
-            </div>
-            <h1 class="text-3xl font-black text-white tracking-tighter uppercase text-center">Agenda RV</h1>
-            <p id="status-text" class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 text-center">Iniciando...</p>
+        <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 text-white text-center">
+            <h1 class="text-2xl font-black tracking-tight">AGENDA RV ✨</h1>
+            <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-widest mt-1 italic text-center">Modo Conducción Activo</p>
         </div>
 
-        <!-- Pantalla de Login -->
-        <div id="login-screen" class="relative z-10 space-y-6 text-center">
-            <p class="text-slate-400 text-sm leading-relaxed px-4 text-center">Toca abajo para conectar con tu cuenta de Neoresins.</p>
-            <button id="auth-btn" class="w-full py-5 bg-white text-black font-black rounded-[2rem] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6" alt="Google">
-                INICIAR AGENDA
+        <!-- Pantalla de Autenticación -->
+        <div id="auth-section" class="p-10 text-center">
+            <i class="fa-solid fa-shield-check text-6xl text-indigo-500 mb-6 opacity-80"></i>
+            
+            <div id="setup-warning" class="hidden mb-6 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-2xl text-red-100 text-sm text-left">
+                <b class="uppercase block mb-1 text-xs text-center">Configuración Requerida</b>
+                <p class="text-[10px] text-center">Pulsa el icono ⚙️ para configurar tus llaves de acceso de Google Cloud.</p>
+            </div>
+
+            <button id="auth-button" class="w-full bg-white text-slate-900 font-bold py-5 px-6 rounded-3xl flex items-center justify-center shadow-lg active:scale-95 transition-all">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-3" alt="Google">
+                ENTRAR CON GOOGLE
             </button>
         </div>
 
-        <!-- Pantalla de Grabación -->
-        <div id="record-screen" class="hidden relative z-10 space-y-6 text-center">
-            <div class="space-y-1 text-center">
-                <div class="flex flex-col items-center gap-1">
-                    <span id="doc-title" class="text-indigo-400 font-black text-xs uppercase tracking-widest block truncate text-center max-w-[200px]">...</span>
-                    <a id="open-doc-link" href="#" target="_blank" class="text-[9px] text-indigo-500 underline uppercase font-bold tracking-tighter">Ver Agenda Completa <i class="fa-solid fa-external-link text-[8px]"></i></a>
+        <!-- Panel de Ajustes -->
+        <div id="settings-panel" class="hidden p-8 space-y-4 bg-slate-900 absolute inset-0 z-30 flex flex-col pt-20 overflow-y-auto">
+            <h2 class="text-xl font-bold border-b border-slate-700 pb-2 flex items-center text-white">
+                <i class="fa-solid fa-key mr-2 text-indigo-400"></i> Ajustes App
+            </h2>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Google API Key</label>
+                    <input type="password" id="config-api-key" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white focus:border-indigo-500 outline-none">
                 </div>
-                
-                <button id="ai-toggle" class="mt-4 px-5 py-2 rounded-full border border-slate-700 text-[9px] font-bold uppercase tracking-widest text-slate-400 transition-all flex items-center gap-2 mx-auto">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Limpieza IA: <span id="ai-status">OFF</span>
-                </button>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Google Client ID</label>
+                    <input type="text" id="config-client-id" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">ID del Documento</label>
+                    <input type="text" id="config-doc-id" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm mt-1 text-white font-mono focus:border-indigo-500 outline-none">
+                </div>
             </div>
 
-            <div class="bg-slate-950/60 rounded-[2.5rem] p-8 min-h-[180px] flex items-center justify-center border border-slate-800 shadow-inner">
-                <p id="transcript" class="text-xl font-medium italic text-slate-300 leading-snug text-center">"Toca el micro y dicta..."</p>
+            <div class="pt-4 space-y-3">
+                <button id="save-settings" class="w-full py-4 bg-indigo-600 rounded-2xl font-bold text-white uppercase text-xs tracking-widest">Guardar y Reiniciar</button>
+                <button id="close-settings" class="w-full py-4 bg-slate-800 rounded-2xl font-bold text-slate-400 uppercase text-xs tracking-widest">Cerrar</button>
+            </div>
+        </div>
+
+        <!-- App Principal -->
+        <div id="app-section" class="hidden p-8 space-y-6">
+            <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 text-center">
+                <div id="doc-name" class="text-indigo-400 font-bold truncate text-xs italic tracking-tight">Cargando Agenda...</div>
             </div>
 
-            <div class="pt-2 flex justify-center text-center">
-                <button id="mic-btn" class="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all group mx-auto">
-                    <i id="mic-icon" class="fa-solid fa-microphone text-4xl text-white"></i>
+            <div class="text-center space-y-4 py-2">
+                <div id="status-indicator" class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">SISTEMA LISTO</div>
+                <div id="transcription-preview" class="min-h-[160px] p-6 bg-slate-900/80 border border-slate-700 rounded-[2.5rem] text-slate-300 italic text-xl flex flex-col items-center justify-center text-center leading-relaxed">
+                    <span id="preview-text">"Pulsa el micro y habla"</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center space-y-6">
+                <button id="record-btn" class="driving-btn w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-90 transition-all border-[8px] border-slate-800 outline outline-4 outline-indigo-500/10">
+                    <i id="mic-icon" class="fa-solid fa-microphone text-5xl"></i>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Feedback Visual -->
-    <div id="toast" class="fixed bottom-12 px-8 py-4 bg-emerald-500 text-white rounded-full font-black shadow-2xl opacity-0 transition-all transform translate-y-4 pointer-events-none z-50 uppercase text-[10px] tracking-widest text-center">
-        Nota Guardada
+    <div id="msg-box" class="fixed top-10 left-1/2 -translate-x-1/2 w-11/12 max-w-xs px-6 py-4 rounded-2xl bg-white text-slate-900 font-bold text-center shadow-2xl opacity-0 transition-opacity pointer-events-none z-50 uppercase text-[10px]">
+        MENSAJE
     </div>
 
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <!-- Librerías de Google -->
+    <script src="https://accounts.google.com/gsi/client" async defer onload="libLoaded('gis')"></script>
+    <script src="https://apis.google.com/js/api.js" async defer onload="libLoaded('gapi')"></script>
 
     <script>
-        // CONFIGURACIÓN
-        const CLIENT_ID = '1011569758504-5ln5ld1lascviri42uks2fh0i9jcheb7.apps.googleusercontent.com'; 
-        const API_KEY = 'AIzaSyB3RGVs8JuETrkPKPljmqLpbPLNsGUsmys';
-        const GEMINI_API_KEY = ""; // Rellenar para usar la IA
+        // CONFIGURACIÓN INICIAL
         const SCOPES = 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.file';
-        const DOC_NAME = 'Agenda de Interacciones Clientes';
 
-        let tokenClient, accessToken = null, documentId = localStorage.getItem('agenda_rv_doc_id'), useAI = false;
+        let savedApiKey = localStorage.getItem('cfg_api_key') || '';
+        let savedClientId = localStorage.getItem('cfg_client_id') || '';
+        let configDocId = localStorage.getItem('cfg_doc_id') || '1dkKdGLSYj2fJHaNQ1D5y-AFW_EAdQNJHelD1wAR7lJU';
+        let documentId = configDocId;
 
-        const loginScreen = document.getElementById('login-screen'), recordScreen = document.getElementById('record-screen');
-        const statusText = document.getElementById('status-text'), transcriptEl = document.getElementById('transcript');
-        const micBtn = document.getElementById('mic-btn'), docTitleEl = document.getElementById('doc-title');
-        const openDocLink = document.getElementById('open-doc-link'), aiToggle = document.getElementById('ai-toggle'), aiStatus = document.getElementById('ai-status');
+        let tokenClient, accessToken = null;
+        let isRecording = false;
 
-        window.onload = () => gapi.load('client', startGapi);
+        const authSection = document.getElementById('auth-section'), appSection = document.getElementById('app-section');
+        const settingsPanel = document.getElementById('settings-panel'), recordBtn = document.getElementById('record-btn');
+        const statusInd = document.getElementById('status-indicator'), previewText = document.getElementById('preview-text');
 
-        async function startGapi() {
+        window.onload = () => {
+            document.getElementById('config-api-key').value = savedApiKey;
+            document.getElementById('config-client-id').value = savedClientId;
+            document.getElementById('config-doc-id').value = configDocId;
+            if (!savedApiKey || !savedClientId) document.getElementById('setup-warning').classList.remove('hidden');
+        };
+
+        async function initServices() {
+            if (!savedApiKey || !savedClientId) return;
             try {
-                await gapi.client.init({ apiKey: API_KEY });
+                await new Promise((resolve) => gapi.load('client', resolve));
+                await gapi.client.init({ apiKey: savedApiKey });
                 await gapi.client.load('https://docs.googleapis.com/$discovery/rest?version=v1');
                 await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
 
                 tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
+                    client_id: savedClientId,
                     scope: SCOPES,
                     callback: (resp) => {
                         if (resp.error) return;
+                        accessToken = resp.access_token;
                         gapi.client.setToken(resp);
-                        onAuthSuccess();
-                    }
+                        startApp();
+                    },
                 });
-                statusText.textContent = "Sistema Listo";
-            } catch (err) {
-                statusText.textContent = "Error de Red";
-            }
+                initSpeech();
+            } catch (err) { console.error("Error GAPI:", err); }
         }
 
-        function onAuthSuccess() {
-            loginScreen.classList.add('hidden');
-            recordScreen.classList.remove('hidden');
-            statusText.textContent = "Conectado";
-            findOrCreateDoc();
-        }
-
-        async function findOrCreateDoc() {
-            if (documentId) {
-                try {
-                    const res = await gapi.client.docs.documents.get({ documentId: documentId });
-                    updateDocUI(res.result.documentId, res.result.title);
-                    return;
-                } catch (e) { documentId = null; }
-            }
-            try {
-                const res = await gapi.client.drive.files.list({ q: `name = '${DOC_NAME}' and trashed = false` });
-                const files = res.result.files;
-                if (files && files.length > 0) documentId = files[0].id;
-                else {
-                    const newDoc = await gapi.client.docs.documents.create({ title: DOC_NAME });
-                    documentId = newDoc.result.documentId;
-                }
-                localStorage.setItem('agenda_rv_doc_id', documentId);
-                updateDocUI(documentId, DOC_NAME);
-            } catch (err) { docTitleEl.textContent = "Error Drive"; }
-        }
-
-        function updateDocUI(id, title) {
-            docTitleEl.textContent = title;
-            openDocLink.href = `https://docs.google.com/document/d/${id}/edit`;
-        }
-
-        // --- IA GEMINI ---
-        async function refineTextWithAI(text) {
-            if (!GEMINI_API_KEY) return text;
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Revisa este texto de una interacción comercial para corregir faltas de ortografía, puntuación y coherencia gramatical. NO cambies la información, los datos ni el sentido del texto original. Devuelve SOLO el texto corregido sin introducciones ni comentarios: "${text}"` }] }]
-                    })
-                });
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text || text;
-            } catch (err) { return text; }
-        }
-
-        // --- VOZ ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.interimResults = true;
-            let isRecording = false;
-
-            recognition.onstart = () => {
-                isRecording = true;
-                micBtn.classList.add('pulse-red', 'bg-red-500');
-                transcriptEl.textContent = "...";
-            };
-
-            recognition.onresult = (e) => {
-                transcriptEl.textContent = Array.from(e.results).map(r => r[0].transcript).join('');
-            };
-
-            recognition.onend = async () => {
-                isRecording = false;
-                micBtn.classList.remove('pulse-red', 'bg-red-500');
-                const rawText = transcriptEl.textContent.trim();
-                if (rawText && rawText.length > 2 && rawText !== "...") {
-                    transcriptEl.textContent = useAI ? "IA Revisando..." : "Guardando...";
-                    let finalContent = rawText;
-                    if (useAI) finalContent = await refineTextWithAI(rawText);
-                    saveToGoogleDocs(finalContent);
-                } else {
-                    transcriptEl.textContent = "Toca el micro para dictar...";
-                }
-            };
-
-            micBtn.onclick = () => isRecording ? recognition.stop() : recognition.start();
-        }
-
-        async function saveToGoogleDocs(text) {
-            try {
-                const now = new Date();
-                const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
-                
-                // Formato para añadir AL PRINCIPIO:
-                // El separador va DEBAJO del nuevo texto para separarlo del anterior
-                const formattedContent = `[${timestamp}]\n${text}\n--------------------------------------------\n\n`;
-
-                await gapi.client.docs.documents.batchUpdate({
-                    documentId: documentId,
-                    resource: { 
-                        requests: [{ 
-                            insertText: { 
-                                location: { index: 1 }, // ÍNDICE 1 = PRINCIPIO DEL DOCUMENTO
-                                text: formattedContent 
-                            } 
-                        }] 
-                    }
-                });
-                
-                showToast("Anotado");
-                speakFeedback("Guardado");
-                
-                setTimeout(() => { transcriptEl.textContent = "Toca el círculo para dictar..."; }, 2500);
-            } catch (err) { showToast("Error al guardar"); }
-        }
-
-        function speakFeedback(text) {
+        function speak(text) {
             if ('speechSynthesis' in window) {
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'es-ES';
-                u.rate = 1.2;
+                u.rate = 1.1;
                 window.speechSynthesis.speak(u);
             }
         }
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.style.opacity = "1";
-            t.style.transform = "translateY(0)";
-            setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateY(4px)"; }, 3000);
+        // --- SISTEMA DE VOZ ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+
+        function initSpeech() {
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES';
+                recognition.interimResults = true;
+                
+                // MODO CONTINUO ACTIVADO: No se corta al haber pausas de silencio
+                recognition.continuous = true; 
+
+                recognition.onstart = () => {
+                    isRecording = true;
+                    recordBtn.classList.add('pulse-animation', 'bg-red-500');
+                    statusInd.textContent = "ESCUCHANDO...";
+                    previewText.textContent = "...";
+                    speak("Dime");
+                };
+
+                recognition.onresult = (e) => {
+                    let finalStr = "";
+                    for (let i = 0; i < e.results.length; ++i) {
+                        finalStr += e.results[i][0].transcript;
+                    }
+                    previewText.textContent = finalStr;
+                };
+
+                recognition.onend = () => {
+                    // Si el móvil intenta cerrarlo pero seguimos queriendo grabar, reiniciamos
+                    if (isRecording) {
+                        recognition.start();
+                        return;
+                    }
+                    
+                    recordBtn.classList.remove('pulse-animation', 'bg-red-500');
+                    statusInd.textContent = "SISTEMA LISTO";
+                    const text = previewText.textContent.trim();
+                    if (text && text.length > 2 && text !== "...") {
+                        saveNote(text);
+                    } else {
+                        previewText.textContent = "Pulsa el micro y habla";
+                    }
+                };
+            }
         }
 
-        aiToggle.onclick = () => {
-            useAI = !useAI;
-            aiStatus.textContent = useAI ? "ON" : "OFF";
-            aiToggle.classList.toggle('ai-active', useAI);
-            aiToggle.classList.toggle('text-indigo-400', useAI);
+        async function saveNote(text) {
+            try {
+                const now = new Date();
+                const timestamp = now.toLocaleDateString('es-ES') + " " + now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+                
+                // Formato: Lo nuevo ARRIBA
+                const entry = `[${timestamp}]\n${text}\n--------------------------------------------\n\n`;
+
+                await gapi.client.docs.documents.batchUpdate({ 
+                    documentId: documentId, 
+                    resource: { 
+                        requests: [{ 
+                            insertText: { 
+                                location: { index: 1 }, // Insertar al principio (debajo del título)
+                                text: entry 
+                            } 
+                        }] 
+                    } 
+                });
+                showMsg("GUARDADO");
+                speak("Anotado");
+                setTimeout(() => { 
+                    if (!isRecording) previewText.textContent = "Pulsa el micro y habla"; 
+                }, 3000);
+            } catch (err) { showMsg("ERROR AL GUARDAR"); }
+        }
+
+        async function startApp() {
+            authSection.classList.add('hidden');
+            appSection.classList.remove('hidden');
+            fetchDocInfo();
+        }
+
+        async function fetchDocInfo() {
+            try {
+                const doc = await gapi.client.docs.documents.get({ documentId: documentId });
+                document.getElementById('doc-name').textContent = doc.result.title;
+            } catch (e) { showMsg("ERROR DE ACCESO AL DOC"); }
+        }
+
+        // EVENTOS DE BOTONES
+        document.getElementById('save-settings').onclick = () => {
+            localStorage.setItem('cfg_api_key', document.getElementById('config-api-key').value);
+            localStorage.setItem('cfg_client_id', document.getElementById('config-client-id').value);
+            localStorage.setItem('cfg_doc_id', document.getElementById('config-doc-id').value);
+            location.reload();
         };
 
-        document.getElementById('auth-btn').onclick = () => tokenClient.requestAccessToken();
+        document.getElementById('settings-btn').onclick = () => settingsPanel.classList.remove('hidden');
+        document.getElementById('close-settings').onclick = () => settingsPanel.classList.add('hidden');
+        document.getElementById('auth-button').onclick = () => tokenClient.requestAccessToken();
+        
+        recordBtn.onclick = () => {
+            if (isRecording) {
+                isRecording = false;
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        };
+
+        function showMsg(text) {
+            const box = document.getElementById('msg-box');
+            box.textContent = text;
+            box.classList.remove('opacity-0');
+            setTimeout(() => box.classList.add('opacity-0'), 4000);
+        }
     </script>
 </body>
 </html>
