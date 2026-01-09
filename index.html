@@ -209,12 +209,19 @@
             }
         }
 
-        function speak(text) {
+        function speak(text, callback) {
             if ('speechSynthesis' in window) {
+                // Cancelar cualquier audio previo para evitar colas
+                window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'es-ES';
                 u.rate = 1.1;
+                if (callback) {
+                    u.onend = () => callback();
+                }
                 window.speechSynthesis.speak(u);
+            } else if (callback) {
+                callback();
             }
         }
 
@@ -233,7 +240,6 @@
                     recordBtn.classList.add('pulse-animation', 'bg-red-500');
                     statusInd.textContent = "ESCUCHANDO...";
                     previewText.textContent = "...";
-                    speak("Dime");
                 };
 
                 recognition.onresult = (e) => {
@@ -339,12 +345,15 @@
                 isRecording = false;
                 recognition.stop();
             } else {
-                try {
-                    recognition.start();
-                } catch(e) {
-                    console.error("Error al iniciar grabación:", e);
-                    showMsg("ERROR AL INICIAR");
-                }
+                // Decir "Dime" y esperar a que termine para activar el micro
+                speak("Dime", () => {
+                    try {
+                        recognition.start();
+                    } catch(e) {
+                        console.error("Error al iniciar grabación:", e);
+                        showMsg("ERROR AL INICIAR");
+                    }
+                });
             }
         };
 
